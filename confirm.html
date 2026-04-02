@@ -43,16 +43,31 @@
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="check">✅</div>
+  <div class="card" id="card">
+    <div class="check" id="icon">✅</div>
     <h1>CaMatch</h1>
     <p class="subtitle">Trouvez vos partenaires de padel</p>
-    <p>Votre email a bien été confirmé !<br>Vous pouvez maintenant vous connecter à l'application.</p>
-    <a href="camatch://" class="btn">Ouvrir CaMatch</a>
+    <p id="message">Votre email a bien été confirmé !<br>Vous pouvez maintenant vous connecter à l'application.</p>
+    <a href="camatch://" class="btn" id="btn">Ouvrir CaMatch</a>
     <p class="hint">Si l'application ne s'ouvre pas automatiquement,<br>appuyez sur le bouton ci-dessus.</p>
   </div>
   <script>
-    setTimeout(() => { window.location.href = 'camatch://'; }, 1500);
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token_hash');
+    const type = params.get('type');
+
+    if (type === 'recovery' && token) {
+      // Mot de passe oublié → rediriger vers l'écran reset dans l'appli
+      document.getElementById('icon').textContent = '🔑';
+      document.getElementById('message').textContent = 'Redirection vers la réinitialisation de votre mot de passe...';
+      const resetUrl = 'camatch://reset-password?token_hash=' + token + '&type=recovery';
+      document.getElementById('btn').href = resetUrl;
+      document.getElementById('btn').textContent = 'Réinitialiser mon mot de passe';
+      setTimeout(() => { window.location.href = resetUrl; }, 1500);
+    } else {
+      // Confirmation email → rediriger vers l'accueil de l'appli
+      setTimeout(() => { window.location.href = 'camatch://'; }, 1500);
+    }
   </script>
 </body>
 </html>
