@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CaMatch - Confirmation email</title>
+  <title>CaMatch</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -40,32 +40,50 @@
       font-size: 16px;
     }
     .hint { color: #555; font-size: 12px; margin-top: 16px; }
+    .error { color: #e74c3c; font-size: 14px; margin-bottom: 16px; }
   </style>
 </head>
 <body>
-  <div class="card" id="card">
+  <div class="card">
     <div class="check" id="icon">✅</div>
     <h1>CaMatch</h1>
     <p class="subtitle">Trouvez vos partenaires de padel</p>
-    <p id="message">Votre email a bien été confirmé !<br>Vous pouvez maintenant vous connecter à l'application.</p>
+    <p id="message">Redirection en cours...</p>
     <a href="camatch://" class="btn" id="btn">Ouvrir CaMatch</a>
-    <p class="hint">Si l'application ne s'ouvre pas automatiquement,<br>appuyez sur le bouton ci-dessus.</p>
+    <p class="hint" id="hint">Si l'application ne s'ouvre pas automatiquement,<br>appuyez sur le bouton ci-dessus.</p>
   </div>
   <script>
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token_hash');
-    const type = params.get('type');
+    // Supabase peut mettre les params dans le hash (#) ou dans le query string (?)
+    const hashParams = new URLSearchParams(window.location.hash.replace('#', ''));
+    const queryParams = new URLSearchParams(window.location.search);
 
-    if (type === 'recovery' && token) {
-      // Mot de passe oublié → rediriger vers l'écran reset dans l'appli
+    const error = hashParams.get('error') || queryParams.get('error');
+    const type = hashParams.get('type') || queryParams.get('type');
+    const tokenHash = queryParams.get('token_hash');
+    const accessToken = hashParams.get('access_token');
+
+    if (error) {
+      // Lien invalide ou expiré
+      document.getElementById('icon').textContent = '⚠️';
+      document.getElementById('message').innerHTML = 'Ce lien est invalide ou a expiré.<br>Veuillez faire une nouvelle demande.';
+      document.getElementById('btn').href = 'camatch://';
+      document.getElementById('btn').textContent = 'Retour à l\'application';
+      document.getElementById('hint').style.display = 'none';
+    } else if (type === 'recovery') {
+      // Réinitialisation mot de passe
       document.getElementById('icon').textContent = '🔑';
       document.getElementById('message').textContent = 'Redirection vers la réinitialisation de votre mot de passe...';
-      const resetUrl = 'camatch://reset-password?token_hash=' + token + '&type=recovery';
+      const resetUrl = tokenHash
+        ? 'camatch://reset-password?token_hash=' + tokenHash + '&type=recovery'
+        : 'camatch://reset-password?access_token=' + accessToken + '&type=recovery';
       document.getElementById('btn').href = resetUrl;
       document.getElementById('btn').textContent = 'Réinitialiser mon mot de passe';
       setTimeout(() => { window.location.href = resetUrl; }, 1500);
     } else {
-      // Confirmation email → rediriger vers l'accueil de l'appli
+      // Confirmation email
+      document.getElementById('message').innerHTML = 'Votre email a bien été confirmé !<br>Vous pouvez maintenant vous connecter à l\'application.';
+      document.getElementById('btn').href = 'camatch://';
+      document.getElementById('btn').textContent = 'Ouvrir CaMatch';
       setTimeout(() => { window.location.href = 'camatch://'; }, 1500);
     }
   </script>
